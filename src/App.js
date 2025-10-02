@@ -1,9 +1,15 @@
-import React from 'react';
-import MonadMainnetLoader from './MonadMainnetLoader';
-import './App.css';
+import React from "react";
+import { Analytics } from "@vercel/analytics/react";
+import MonadMainnetLoader from "./MonadMainnetLoader";
+import "./App.css";
 
 function App() {
-  return <MonadMainnetLoader />;
+  return (
+    <div className="App">
+      <MonadMainnetLoader />
+      <Analytics />
+    </div>
+  );
 }
 
 export default App;
