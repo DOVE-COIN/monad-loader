@@ -12,8 +12,6 @@ Features
 - Simulated sync progress starting at 51%
 - Real-time timer that continues even after page reloads
 - Clean UI with progress bar and status
-- Analytics integrated with [Vercel Analytics](https://vercel.com/analytics)
-- Built with **React + Vercel**
 
 ---
 
