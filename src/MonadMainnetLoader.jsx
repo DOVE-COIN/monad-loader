@@ -1,41 +1,54 @@
 import React, { useEffect, useState, useRef } from "react";
 import './App.css';
 
-const STATUS_API_URL = (typeof process !== 'undefined' && process.env && process.env.REACT_APP_MONAD_STATUS_URL)
-  ? process.env.REACT_APP_MONAD_STATUS_URL
-  : "/api/monad/status";
+const STATUS_API_URL =
+  (typeof process !== 'undefined' && process.env && process.env.REACT_APP_MONAD_STATUS_URL)
+    ? process.env.REACT_APP_MONAD_STATUS_URL
+    : "/api/monad/status";
+
 const POLL_INTERVAL_MS = 3000;
 
-// === Global Monad Sync Settings ===
-const START_DATE = new Date("2025-10-02T00:00:00Z"); // started 4 days ago
-const START_PROGRESS = 80;     // starting percentage
-const DAILY_INCREMENT = 2.5;   // percent per day increase
+// Simulation parameters
+const INITIAL_SYNC = 80.0;               // Start percentage
+const GROWTH_PER_DAY = 2.5;              // 2.5% daily growth
+const DAYS_TO_COMPLETE = (100 - INITIAL_SYNC) / GROWTH_PER_DAY; // total ~8 days
+const TOTAL_SECONDS = DAYS_TO_COMPLETE * 24 * 60 * 60;
+
+const LOCAL_STORAGE_KEY = 'monad_timer_v2_start'; // reset old saved time
 
 export default function MonadMainnetLoader({ apiUrl = STATUS_API_URL }) {
   const [status, setStatus] = useState(null);
   const [connected, setConnected] = useState(false);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
-  const [displayedPct, setDisplayedPct] = useState(START_PROGRESS);
+  const [displayedPct, setDisplayedPct] = useState(INITIAL_SYNC);
 
   const pollRef = useRef(null);
-  const animationRef = useRef(null);
   const timerRef = useRef(null);
+  const animationRef = useRef(null);
 
-  // Timer updates every second using real world time difference
+  // Initialize start time (pretend started 4 days ago)
   useEffect(() => {
-    const updateElapsed = () => {
-      const diff = Date.now() - START_DATE.getTime();
-      setElapsedSeconds(Math.floor(diff / 1000));
-    };
+    let startTimestamp = localStorage.getItem(LOCAL_STORAGE_KEY);
+    if (!startTimestamp) {
+      const FOUR_DAYS_MS = 4 * 24 * 60 * 60 * 1000;
+      startTimestamp = Date.now() - FOUR_DAYS_MS;
+      localStorage.setItem(LOCAL_STORAGE_KEY, startTimestamp);
+    }
 
-    updateElapsed();
-    timerRef.current = setInterval(updateElapsed, 1000);
+    const startTime = Number(startTimestamp);
+    setElapsedSeconds(Math.floor((Date.now() - startTime) / 1000));
+
+    timerRef.current = setInterval(() => {
+      setElapsedSeconds(Math.floor((Date.now() - startTime) / 1000));
+    }, 1000);
+
     return () => clearInterval(timerRef.current);
   }, []);
 
-  // Fetch optional live status
+  // Fetch live status (optional; fallback to demo)
   useEffect(() => {
     let mounted = true;
+
     async function fetchStatus() {
       try {
         const res = await fetch(apiUrl, { cache: "no-store" });
@@ -49,8 +62,10 @@ export default function MonadMainnetLoader({ apiUrl = STATUS_API_URL }) {
         setConnected(false);
       }
     }
+
     fetchStatus();
     pollRef.current = setInterval(fetchStatus, POLL_INTERVAL_MS);
+
     return () => {
       mounted = false;
       clearInterval(pollRef.current);
@@ -68,17 +83,19 @@ export default function MonadMainnetLoader({ apiUrl = STATUS_API_URL }) {
     };
   }
 
-  // === Global Progress Calculation ===
-  const daysPassed = (Date.now() - START_DATE.getTime()) / (1000 * 60 * 60 * 24);
-  const currentProgress = Math.min(START_PROGRESS + daysPassed * DAILY_INCREMENT, 100);
+  // Demo sync progress (simulated)
+  const demoSyncPct = Math.min(
+    100,
+    INITIAL_SYNC + (elapsedSeconds / TOTAL_SECONDS) * (100 - INITIAL_SYNC)
+  );
 
   const demo = {
     chain: "monad-mainnet",
-    status: currentProgress >= 100 ? "ready" : "syncing",
+    status: "syncing",
     blockHeight: 123_456,
     peers: 8,
     tps: 0.7,
-    syncPct: currentProgress,
+    syncPct: demoSyncPct,
   };
 
   const s = connected && status ? status : demo;
@@ -115,7 +132,11 @@ export default function MonadMainnetLoader({ apiUrl = STATUS_API_URL }) {
           </div>
           <div>
             <div className="loader-label">Status</div>
-            <div className={`loader-value ${s.status === 'ready' ? 'status-ready' : 'status-syncing'}`}>
+            <div
+              className={`loader-value ${
+                s.status === "ready" ? "status-ready" : "status-syncing"
+              }`}
+            >
               {s.status}
             </div>
           </div>
