@@ -2,9 +2,9 @@ import React, { useEffect, useState, useRef } from "react";
 import "./App.css";
 
 // --- CONFIGURATION ---
-const INITIAL_SYNC = 68.0;          // Base start tuned for exact 81% at day 4
+const INITIAL_SYNC = 64.5;          // Base start tuned for exact 81% at day 4
 const DAILY_INCREMENT = 2.0;        // % increase per day
-const START_DAYS_AGO = 4.5;         // Pretend it started 4.5 days ago
+const START_DAYS_AGO = 5.5;         // Pretend it started 5.5 days ago
 const TOTAL_DAYS = 15;              // Reaches 100% on day 15
 const LOCAL_STORAGE_KEY = "monad_timer_start";
 const POLL_INTERVAL_MS = 3000;
