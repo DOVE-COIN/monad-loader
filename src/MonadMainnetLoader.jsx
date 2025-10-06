@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef } from "react";
 import "./App.css";
 
 // --- CONFIGURATION ---
-const INITIAL_SYNC = 69.5;          // Base start
+const INITIAL_SYNC = 68.5;          // Base start tuned for exact 81% at day 4
 const DAILY_INCREMENT = 2.0;        // % increase per day
 const START_DAYS_AGO = 4.0;         // Pretend it started 4 days ago
 const TOTAL_DAYS = 15;              // Reaches 100% on day 15
