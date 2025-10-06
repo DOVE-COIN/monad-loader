@@ -9,9 +9,9 @@ const STATUS_API_URL =
 const POLL_INTERVAL_MS = 3000;
 
 // --- CONFIG ---
-const INITIAL_SYNC = 70.0;    // start at 70%
+const INITIAL_SYNC = 70.0;    // Start at 70%
 const DAILY_INCREMENT = 2.0;  // 2% per day
-const START_DAYS_AGO = 4;     // pretend sync started 4 days ago
+const START_DAYS_AGO = 4;     // Pretend it started 4 days ago
 const LOCAL_STORAGE_KEY = "monad_timer_start";
 // ---------------
 
@@ -28,11 +28,9 @@ export default function MonadMainnetLoader({ apiUrl = STATUS_API_URL }) {
   useEffect(() => {
     let startTimestamp = localStorage.getItem(LOCAL_STORAGE_KEY);
 
-    // 🧠 Offset start time so we "start" 4 days ago
-    const fourDaysAgo = Date.now() - START_DAYS_AGO * 24 * 60 * 60 * 1000;
-
     if (!startTimestamp) {
-      startTimestamp = fourDaysAgo; // initialize with 4 days ago
+      // 🧠 Pretend the start time was 4 days ago
+      startTimestamp = Date.now() - START_DAYS_AGO * 24 * 60 * 60 * 1000;
       localStorage.setItem(LOCAL_STORAGE_KEY, startTimestamp);
     }
 
@@ -46,7 +44,6 @@ export default function MonadMainnetLoader({ apiUrl = STATUS_API_URL }) {
     return () => clearInterval(timerRef.current);
   }, []);
 
-  // Polling for API (optional)
   useEffect(() => {
     let mounted = true;
     async function fetchStatus() {
@@ -153,7 +150,7 @@ export default function MonadMainnetLoader({ apiUrl = STATUS_API_URL }) {
             {displayedPct.toFixed(2)}% — Block #{s.blockHeight.toLocaleString()}
           </div>
           <div className="loader-progress-text">
-            Elapsed time: {formatTime(elapsedSeconds + START_DAYS_AGO * SECONDS_PER_DAY)}
+            Elapsed time: {formatTime(elapsedSeconds)}
           </div>
         </div>
 
