@@ -1,20 +1,20 @@
 import React, { useEffect, useState, useRef } from "react";
-import './App.css';
+import "./App.css";
 
 const STATUS_API_URL =
-  (typeof process !== 'undefined' && process.env && process.env.REACT_APP_MONAD_STATUS_URL)
+  (typeof process !== "undefined" && process.env && process.env.REACT_APP_MONAD_STATUS_URL)
     ? process.env.REACT_APP_MONAD_STATUS_URL
     : "/api/monad/status";
 
 const POLL_INTERVAL_MS = 3000;
 
-// Simulation parameters
-const INITIAL_SYNC = 80.0;               // Start percentage
-const GROWTH_PER_DAY = 2.5;              // 2.5% daily growth
+// ---- Simulation setup ----
+const INITIAL_SYNC = 80.0;           // Start at 80%
+const GROWTH_PER_DAY = 2.5;          // Increase 2.5% per day
 const DAYS_TO_COMPLETE = (100 - INITIAL_SYNC) / GROWTH_PER_DAY; // total ~8 days
 const TOTAL_SECONDS = DAYS_TO_COMPLETE * 24 * 60 * 60;
 
-const LOCAL_STORAGE_KEY = 'monad_timer_v2_start'; // reset old saved time
+const LOCAL_STORAGE_KEY = "monad_timer_v3_start";
 
 export default function MonadMainnetLoader({ apiUrl = STATUS_API_URL }) {
   const [status, setStatus] = useState(null);
@@ -26,12 +26,14 @@ export default function MonadMainnetLoader({ apiUrl = STATUS_API_URL }) {
   const timerRef = useRef(null);
   const animationRef = useRef(null);
 
-  // Initialize start time (pretend started 4 days ago)
+  // Initialize start time as 4 days ago (simulated)
   useEffect(() => {
     let startTimestamp = localStorage.getItem(LOCAL_STORAGE_KEY);
     if (!startTimestamp) {
       const FOUR_DAYS_MS = 4 * 24 * 60 * 60 * 1000;
-      startTimestamp = Date.now() - FOUR_DAYS_MS;
+      // The trick: set "start time" 4 days *ahead*, so we begin at 80% now.
+      // We offset the start so the computed progress at this moment = 80%.
+      startTimestamp = Date.now(); // set baseline now
       localStorage.setItem(LOCAL_STORAGE_KEY, startTimestamp);
     }
 
@@ -45,7 +47,7 @@ export default function MonadMainnetLoader({ apiUrl = STATUS_API_URL }) {
     return () => clearInterval(timerRef.current);
   }, []);
 
-  // Fetch live status (optional; fallback to demo)
+  // Fetch status
   useEffect(() => {
     let mounted = true;
 
@@ -65,7 +67,6 @@ export default function MonadMainnetLoader({ apiUrl = STATUS_API_URL }) {
 
     fetchStatus();
     pollRef.current = setInterval(fetchStatus, POLL_INTERVAL_MS);
-
     return () => {
       mounted = false;
       clearInterval(pollRef.current);
@@ -83,10 +84,11 @@ export default function MonadMainnetLoader({ apiUrl = STATUS_API_URL }) {
     };
   }
 
-  // Demo sync progress (simulated)
+  // ---- Demo Sync ----
+  const adjustedElapsedSeconds = elapsedSeconds + 4 * 24 * 60 * 60; // simulate day 4
   const demoSyncPct = Math.min(
     100,
-    INITIAL_SYNC + (elapsedSeconds / TOTAL_SECONDS) * (100 - INITIAL_SYNC)
+    INITIAL_SYNC + (adjustedElapsedSeconds / TOTAL_SECONDS) * (100 - INITIAL_SYNC)
   );
 
   const demo = {
@@ -100,10 +102,10 @@ export default function MonadMainnetLoader({ apiUrl = STATUS_API_URL }) {
 
   const s = connected && status ? status : demo;
 
-  // Smooth animation for progress bar
+  // Smooth bar animation
   useEffect(() => {
     animationRef.current = requestAnimationFrame(function animate() {
-      setDisplayedPct(prev => {
+      setDisplayedPct((prev) => {
         const target = s.syncPct;
         const diff = target - prev;
         if (Math.abs(diff) < 0.01) return target;
@@ -115,10 +117,11 @@ export default function MonadMainnetLoader({ apiUrl = STATUS_API_URL }) {
   }, [s.syncPct]);
 
   const formatTime = (seconds) => {
-    const d = Math.floor(seconds / (24 * 3600));
-    const h = Math.floor((seconds % (24 * 3600)) / 3600);
-    const m = Math.floor((seconds % 3600) / 60);
-    const s = seconds % 60;
+    const totalSeconds = seconds + 4 * 24 * 60 * 60; // start at day 4
+    const d = Math.floor(totalSeconds / (24 * 3600));
+    const h = Math.floor((totalSeconds % (24 * 3600)) / 3600);
+    const m = Math.floor((totalSeconds % 3600) / 60);
+    const s = totalSeconds % 60;
     return `${d}d ${h}h ${m}m ${s}s`;
   };
 
@@ -146,7 +149,9 @@ export default function MonadMainnetLoader({ apiUrl = STATUS_API_URL }) {
           <div className="loader-progress-bar">
             <div
               className="loader-progress-fill"
-              style={{ width: `${Math.max(0, Math.min(100, displayedPct))}%` }}
+              style={{
+                width: `${Math.max(0, Math.min(100, displayedPct))}%`,
+              }}
             />
           </div>
           <div className="loader-progress-text">
