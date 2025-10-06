@@ -9,12 +9,12 @@ const STATUS_API_URL =
 const POLL_INTERVAL_MS = 3000;
 
 // ---- Simulation setup ----
-const INITIAL_SYNC = 80.0;           // Start at 80%
-const GROWTH_PER_DAY = 2.5;          // Increase 2.5% per day
-const DAYS_TO_COMPLETE = (100 - INITIAL_SYNC) / GROWTH_PER_DAY; // total ~8 days
+const INITIAL_SYNC = 70.0;           // Start at 70%
+const GROWTH_PER_DAY = 2.0;          // Increase 2% per day
+const DAYS_TO_COMPLETE = (100 - INITIAL_SYNC) / GROWTH_PER_DAY; // 15 days
 const TOTAL_SECONDS = DAYS_TO_COMPLETE * 24 * 60 * 60;
 
-const LOCAL_STORAGE_KEY = "monad_timer_v3_start";
+const LOCAL_STORAGE_KEY = "monad_timer_v4_start";
 
 export default function MonadMainnetLoader({ apiUrl = STATUS_API_URL }) {
   const [status, setStatus] = useState(null);
@@ -30,10 +30,7 @@ export default function MonadMainnetLoader({ apiUrl = STATUS_API_URL }) {
   useEffect(() => {
     let startTimestamp = localStorage.getItem(LOCAL_STORAGE_KEY);
     if (!startTimestamp) {
-      const FOUR_DAYS_MS = 4 * 24 * 60 * 60 * 1000;
-      // The trick: set "start time" 4 days *ahead*, so we begin at 80% now.
-      // We offset the start so the computed progress at this moment = 80%.
-      startTimestamp = Date.now(); // set baseline now
+      startTimestamp = Date.now();
       localStorage.setItem(LOCAL_STORAGE_KEY, startTimestamp);
     }
 
@@ -85,7 +82,7 @@ export default function MonadMainnetLoader({ apiUrl = STATUS_API_URL }) {
   }
 
   // ---- Demo Sync ----
-  const adjustedElapsedSeconds = elapsedSeconds + 4 * 24 * 60 * 60; // simulate day 4
+  const adjustedElapsedSeconds = elapsedSeconds + 4 * 24 * 60 * 60; // simulate day 4 baseline
   const demoSyncPct = Math.min(
     100,
     INITIAL_SYNC + (adjustedElapsedSeconds / TOTAL_SECONDS) * (100 - INITIAL_SYNC)
