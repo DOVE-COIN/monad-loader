@@ -1,19 +1,19 @@
 import React, { useEffect, useState, useRef } from "react";
 import "./App.css";
 
+// --- CONFIGURATION ---
+const INITIAL_SYNC = 70.0;          // Starting percentage
+const DAILY_INCREMENT = 2.0;        // % increase per day
+const START_DAYS_AGO = 4.5;         // Pretend it's been running 4.5 days
+const TOTAL_DAYS = 15;              // Reaches 100% on day 15
+const LOCAL_STORAGE_KEY = "monad_timer_start";
+const POLL_INTERVAL_MS = 3000;
+// ----------------------
+
 const STATUS_API_URL =
   typeof process !== "undefined" && process.env && process.env.REACT_APP_MONAD_STATUS_URL
     ? process.env.REACT_APP_MONAD_STATUS_URL
     : "/api/monad/status";
-
-const POLL_INTERVAL_MS = 3000;
-
-// --- CONFIG ---
-const INITIAL_SYNC = 70.0;    // Start at 70%
-const DAILY_INCREMENT = 2.0;  // 2% per day
-const START_DAYS_AGO = 4;     // Pretend it started 4 days ago
-const LOCAL_STORAGE_KEY = "monad_timer_start";
-// ---------------
 
 export default function MonadMainnetLoader({ apiUrl = STATUS_API_URL }) {
   const [status, setStatus] = useState(null);
@@ -25,15 +25,13 @@ export default function MonadMainnetLoader({ apiUrl = STATUS_API_URL }) {
   const timerRef = useRef(null);
   const animationRef = useRef(null);
 
+  // Initialize start time from localStorage or now
   useEffect(() => {
     let startTimestamp = localStorage.getItem(LOCAL_STORAGE_KEY);
-
     if (!startTimestamp) {
-      // 🧠 Pretend the start time was 4 days ago
-      startTimestamp = Date.now() - START_DAYS_AGO * 24 * 60 * 60 * 1000;
+      startTimestamp = Date.now();
       localStorage.setItem(LOCAL_STORAGE_KEY, startTimestamp);
     }
-
     const startTime = Number(startTimestamp);
     setElapsedSeconds(Math.floor((Date.now() - startTime) / 1000));
 
@@ -41,11 +39,14 @@ export default function MonadMainnetLoader({ apiUrl = STATUS_API_URL }) {
       setElapsedSeconds(Math.floor((Date.now() - startTime) / 1000));
     }, 1000);
 
-    return () => clearInterval(timerRef.current);
+    return () => {
+      clearInterval(timerRef.current);
+    };
   }, []);
 
   useEffect(() => {
     let mounted = true;
+
     async function fetchStatus() {
       try {
         const res = await fetch(apiUrl, { cache: "no-store" });
@@ -80,15 +81,15 @@ export default function MonadMainnetLoader({ apiUrl = STATUS_API_URL }) {
     };
   }
 
-  // --- DEMO PROGRESS CALC ---
+  // --- Simulated sync progress logic ---
   const SECONDS_PER_DAY = 24 * 60 * 60;
-  const elapsedDays = elapsedSeconds / SECONDS_PER_DAY;
-  const demoSyncPct = Math.min(100, INITIAL_SYNC + elapsedDays * DAILY_INCREMENT);
-  // ---------------------------
+  const elapsedDays = elapsedSeconds / SECONDS_PER_DAY + START_DAYS_AGO;
+  const targetPct = INITIAL_SYNC + elapsedDays * DAILY_INCREMENT;
+  const demoSyncPct = Math.min(100, targetPct);
 
   const demo = {
     chain: "monad-mainnet",
-    status: "syncing",
+    status: demoSyncPct >= 100 ? "ready" : "syncing",
     blockHeight: 123_456,
     peers: 8,
     tps: 0.7,
@@ -97,7 +98,7 @@ export default function MonadMainnetLoader({ apiUrl = STATUS_API_URL }) {
 
   const s = connected && status ? status : demo;
 
-  // Smooth animation
+  // Smooth animation for progress bar
   useEffect(() => {
     animationRef.current = requestAnimationFrame(function animate() {
       setDisplayedPct((prev) => {
@@ -129,11 +130,7 @@ export default function MonadMainnetLoader({ apiUrl = STATUS_API_URL }) {
           </div>
           <div>
             <div className="loader-label">Status</div>
-            <div
-              className={`loader-value ${
-                s.status === "ready" ? "status-ready" : "status-syncing"
-              }`}
-            >
+            <div className={`loader-value ${s.status === "ready" ? "status-ready" : "status-syncing"}`}>
               {s.status}
             </div>
           </div>
@@ -149,9 +146,7 @@ export default function MonadMainnetLoader({ apiUrl = STATUS_API_URL }) {
           <div className="loader-progress-text">
             {displayedPct.toFixed(2)}% — Block #{s.blockHeight.toLocaleString()}
           </div>
-          <div className="loader-progress-text">
-            Elapsed time: {formatTime(elapsedSeconds)}
-          </div>
+          <div className="loader-progress-text">Elapsed time: {formatTime(elapsedSeconds)}</div>
         </div>
 
         <footer className="loader-footer">Built by gentledove.eth</footer>
